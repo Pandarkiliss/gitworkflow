@@ -1,0 +1,35 @@
+global:
+  registry: "XXXX.io"
+  cluster: "production-eu-west-1"
+
+project-a:
+  repository-name: "project-a"
+  deployment:
+    image:
+      registry: "XXXX.io"
+      name: "project-a"
+      tag: "0.4.0-alpha.1"
+
+project-b:
+  repository-name: "legacy-project-b-service"
+  deployment:
+    image:
+      registry: "XXXX.io"
+      name: "project-b"
+      tag: "2.8.3-alpha.2"
+
+project-c:
+  repository-name: "project-c"
+  deployment:
+    image:
+      registry: "XXXX.io"
+      name: "project-c"
+      tag: "1.7.0"
+
+project-d:
+  repository-name: "team/project-d"
+  deployment:
+    image:
+      registry: "XXXX.io"
+      name: "project-d"
+      tag: "2.9.0-beta.1"

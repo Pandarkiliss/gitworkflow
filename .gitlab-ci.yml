@@ -1,0 +1,71 @@
+stages:
+  - validate
+  - create-release
+  - beta
+  - promote-production
+
+variables:
+  GIT_DEPTH: "0"
+  GIT_STRATEGY: fetch
+  GITLAB_API_URL: ${CI_SERVER_PROTOCOL}://${CI_SERVER_HOST}/api/v4
+  UMBRELLA_RELEASE_BRANCH: "release/2026-s20"
+
+default:
+  before_script:
+    - |
+      set -euo pipefail
+      apk add --no-cache git curl python3 py3-pip >/dev/null 2>&1 || true
+      python3 -m pip install --quiet PyYAML >/dev/null 2>&1 || true
+      git config --global user.name "${GITLAB_USER_NAME:-GitLab CI Release Bot}"
+      git config --global user.email "${GITLAB_USER_EMAIL:-release-bot@example.invalid}"
+      if [ -n "${GITLAB_RELEASE_TOKEN:-}" ]; then
+        git config --global url."https://gitlab-ci-token:${GITLAB_RELEASE_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
+        git config --global url."https://gitlab-ci-token:${GITLAB_RELEASE_TOKEN}@${CI_SERVER_HOST}/".insteadOf "http://${CI_SERVER_HOST}/"
+      fi
+
+validate:
+  stage: validate
+  image: python:3.12-alpine
+  script:
+    - |
+      set -euo pipefail
+      bash -n scripts/*.sh
+      python3 - <<'PY'
+      import sys
+      import yaml
+      with open('charts/values.yaml', 'r', encoding='utf-8') as fh:
+          data = yaml.safe_load(fh) or {}
+      if not isinstance(data, dict):
+          raise SystemExit('charts/values.yaml must contain a YAML object at the root')
+      for key, value in data.items():
+          if key == 'global':
+              continue
+          if not isinstance(value, dict):
+              raise SystemExit(f'Project block {key!r} is not a mapping')
+          if 'repository-name' not in value:
+              raise SystemExit(f'Project {key!r} is missing repository-name')
+          if 'deployment' not in value or 'image' not in value['deployment']:
+              raise SystemExit(f'Project {key!r} is missing deployment.image')
+      print('YAML validation OK')
+      PY
+
+create-release:
+  stage: create-release
+  image: python:3.12-alpine
+  when: manual
+  script:
+    - bash scripts/create-releases.sh
+
+beta:
+  stage: beta
+  image: python:3.12-alpine
+  when: manual
+  script:
+    - bash scripts/create-beta.sh
+
+promote-production:
+  stage: promote-production
+  image: python:3.12-alpine
+  when: manual
+  script:
+    - bash scripts/promote-production.sh

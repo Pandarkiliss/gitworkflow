@@ -1,0 +1,7 @@
+{
+  "source_branch": "release/2.8",
+  "target_branch": "master",
+  "title": "Promote release/2.8 to master",
+  "remove_source_branch": true,
+  "description": "Production promotion prepared by the CI automation.\n\n- Validate branch ancestry\n- Verify release quality\n- Trigger MR for protected branch promotion"
+}
